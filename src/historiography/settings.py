@@ -1,0 +1,1 @@
+CYBERLENINKA_BASE_URL = "https://cyberleninka.ru"
