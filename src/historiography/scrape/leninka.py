@@ -24,7 +24,7 @@ class LeninkaArticle:
     title: str = ""
     author: str = ""
     search_matches: tp.Tuple[str] = ()
-    year: int = -1
+    year: int = 0
     journal_name: str = ""
     journal_link: str = ""
 
@@ -73,7 +73,7 @@ def get_chrome(options: tp.Optional[ChromeOptions] = None) -> Chrome:
     
     return driver
 
-def scrape_page(driver: Chrome, url: str) -> tp.List[LeninkaArticle]:
+def scrape_leninka_articles_search_page(driver: Chrome, url: str) -> tp.List[LeninkaArticle]:
     """
     Opens a chrome driver to open page with search-results
     and returns a list of articles results
@@ -88,13 +88,14 @@ def scrape_page(driver: Chrome, url: str) -> tp.List[LeninkaArticle]:
 
     return articles
 
-def scrape_articles_links(
+def scrape_leninka_articles_search(
     query: str, 
     limit: int = ENTRIES_PER_LENINKA_PAGE, 
-    skip: int = 0
-) -> tp.List:
+    skip: int = 0,
+    driver: Chrome = None
+) -> tp.List[LeninkaArticle]:
     """
-    Get article links from cyberleninka
+    Get all articles infos from search of leninka
     """    
     # Argument validation
     query = query.strip()
@@ -111,23 +112,25 @@ def scrape_articles_links(
     starting_page = 1 + skip // ENTRIES_PER_LENINKA_PAGE
     ending_page = 1 + (skip + limit) // ENTRIES_PER_LENINKA_PAGE
 
-    driver = get_chrome()
-
     articles = []
-    try:
-        for i in tqdm(range(starting_page, ending_page + 1), desc='Pages'):
-            search_page_url = search_page_base_url + f'&page={str(i)}'
-            page_articles = scrape_page(driver, search_page_url) 
-            articles.extend(page_articles)
-    finally:
-        driver.quit()
 
+    for i in tqdm(range(starting_page, ending_page + 1), desc='Pages'):
+        search_page_url = search_page_base_url + f'&page={str(i)}'
+        page_articles = scrape_leninka_articles_search_page(driver, search_page_url) 
+        articles.extend(page_articles)
+
+    position_of_first_article_on_first_page = skip % ENTRIES_PER_LENINKA_PAGE
+    position_of_last_article_on_last_page = ((skip+limit) % ENTRIES_PER_LENINKA_PAGE)
+    articles = articles[
+        position_of_first_article_on_first_page:
+        -(ENTRIES_PER_LENINKA_PAGE - position_of_last_article_on_last_page)
+    ]
     return articles
 
 
 def get_articles(search: str, limit: int = ENTRIES_PER_LENINKA_PAGE, skip: int = 0) -> tp.List:
     # 1. Get download links
-    links = scrape_articles_links(search, limit, skip)
+    links = scrape_leninka_articles_search(search, limit, skip)
     
    
     
