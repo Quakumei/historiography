@@ -13,9 +13,8 @@ from ..historiography.scrape.leninka import (
     scrape_leninka_articles_search_page,
     scrape_leninka_articles_search,
     LeninkaArticle,
-    ENTRIES_PER_LENINKA_PAGE
+    ENTRIES_PER_LENINKA_PAGE,
 )
-from ..historiography.settings import CYBERLENINKA_BASE_URL
 
 def validate_leninka_article(article: LeninkaArticle):
     assert isinstance(article, LeninkaArticle)
@@ -27,11 +26,12 @@ def validate_leninka_article(article: LeninkaArticle):
         'journal_name',
         'year',
         'search_matches',
-        'journal_link'
+        'journal_link',
+        'pdf_link'
         # 'author'
     ]
     for k in non_empty_keys:
-        assert bool(article_dict[k]), article_dict
+        assert bool(article_dict.get(k, None)), article_dict
 
     links = [article.link, article.journal_link]
     possible_link_protocols = ("http://", "https://")
@@ -49,20 +49,20 @@ def test_leninka_articles_search_page(driver, sample_search_page_url):
     validate_leninka_articles_list(articles, ENTRIES_PER_LENINKA_PAGE)
 
 @pytest.mark.parametrize(
-        "limit,skip", 
-        list(
-            itertools.product(
-                limits:=[0, 5, 10, 20], 
-                skips:=[0, 15, 30]
-            )
+    "limit,skip", 
+    list(
+        itertools.product(
+            limits:=[0, 5, 10, 20], 
+            skips:=[0, 15, 30]
         )
+    )
 )
 def test_scrape_leninka_articles_search(driver, sample_query, limit, skip):    
     articles = scrape_leninka_articles_search(
+        driver,
         sample_query, 
         limit=limit,
         skip=skip,
-        driver=driver
     )
     validate_leninka_articles_list(articles, limit)
 

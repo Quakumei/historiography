@@ -13,16 +13,16 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from src.historiography.settings import CYBERLENINKA_BASE_URL
-
+CYBERLENINKA_BASE_URL = "https://cyberleninka.ru"
 ENTRIES_PER_LENINKA_PAGE = 10
 SEARCH_RESULTS_ELEMENT_ID = "search-results"
 
 @dataclasses.dataclass
 class LeninkaArticle:
     link: str = ""
+    pdf_link: str = ""
     title: str = ""
-    author: str = ""
+    authors: tp.Tuple[str] = ()
     search_matches: tp.Tuple[str] = ()
     year: int = 0
     journal_name: str = ""
@@ -31,8 +31,9 @@ class LeninkaArticle:
     @classmethod
     def from_li_web_element(cls, search_result):
         link = CYBERLENINKA_BASE_URL + search_result.h2.a.get('href')
+        pdf_link = link + '/pdf'
         title = search_result.h2.a.get_text()
-        author = search_result.find_all('span')[0].get_text()
+        authors = tuple(search_result.find_all('span')[0].get_text().split(', '))
         search_matches = tuple([p.get_text() for p in search_result.div.find_all('p')])
         year = int(search_result.find_all('span')[1].get_text().split(" / ")[0])
         journal_name = search_result.find_all('span')[1].a.get_text()
@@ -40,8 +41,9 @@ class LeninkaArticle:
 
         return cls(
             link=link,
+            pdf_link=pdf_link,
             title=title,
-            author=author,
+            authors=authors,
             search_matches=search_matches,
             year=year,
             journal_name=journal_name,
@@ -89,10 +91,10 @@ def scrape_leninka_articles_search_page(driver: Chrome, url: str) -> tp.List[Len
     return articles
 
 def scrape_leninka_articles_search(
+    driver: Chrome,
     query: str, 
     limit: int = ENTRIES_PER_LENINKA_PAGE, 
-    skip: int = 0,
-    driver: Chrome = None
+    skip: int = 0
 ) -> tp.List[LeninkaArticle]:
     """
     Get all articles infos from search of leninka
@@ -128,9 +130,7 @@ def scrape_leninka_articles_search(
     return articles
 
 
-def get_articles(search: str, limit: int = ENTRIES_PER_LENINKA_PAGE, skip: int = 0) -> tp.List:
+def get_leninka_articles(query: str, limit: int = ENTRIES_PER_LENINKA_PAGE, skip: int = 0) -> tp.List:
     # 1. Get download links
-    links = scrape_leninka_articles_search(search, limit, skip)
-    
-   
-    
+    driver: Chrome = get_chrome()
+    links = scrape_leninka_articles_search(driver, query, limit, skip)
