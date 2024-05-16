@@ -6,7 +6,8 @@ import itertools
 from .fixtures import (
     driver, 
     sample_search_page_url,
-    sample_query
+    sample_query,
+    urlencode
 )
 
 from ..historiography.scrape.leninka import (
@@ -66,4 +67,25 @@ def test_scrape_leninka_articles_search(driver, sample_query, limit, skip):
     )
     validate_leninka_articles_list(articles, limit)
 
-    
+def test_scrape_leninka_articles_search_does_not_duplicate(driver, sample_query):    
+    articles = scrape_leninka_articles_search(
+        driver,
+        sample_query, 
+        limit=10,
+        skip=0,
+    )
+    validate_leninka_articles_list(articles, 10)
+    articles_next = scrape_leninka_articles_search(
+        driver,
+        sample_query, 
+        limit=10,
+        skip=10,
+    )
+    validate_leninka_articles_list(articles_next, 10)
+
+    assert set(articles).intersection(set(articles_next)) == set()
+
+def test_urlencode_space():
+    sample = 'a b c'
+    encoded = urlencode(sample)
+    assert sample.replace(" ", "%20") == encoded

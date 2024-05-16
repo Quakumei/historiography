@@ -4,7 +4,9 @@ get_articles.py - articles download from cyberleninka
 
 import dataclasses
 import typing as tp
-from urllib.parse import quote_plus as urlencode
+import time
+import random
+from urllib.parse import quote as urlencode
 
 from tqdm import tqdm
 from bs4 import BeautifulSoup
@@ -28,12 +30,31 @@ class LeninkaArticle:
     journal_name: str = ""
     journal_link: str = ""
 
+    def __key(self):
+        return (
+            self.link,
+            self.pdf_link,
+            self.title,
+            self.authors,
+            self.search_matches,
+            self.year,
+            self.journal_link,
+            self.journal_name
+        )
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        if isinstance(other, LeninkaArticle):
+            return self.__key() == other.__key()
+        return NotImplemented
+
     @classmethod
     def from_li_web_element(cls, search_result):
         link = CYBERLENINKA_BASE_URL + search_result.h2.a.get('href')
         pdf_link = link + '/pdf'
         title = search_result.h2.a.get_text()
-        authors = tuple(search_result.find_all('span')[0].get_text().split(', '))
+        authors = tuple(filter(lambda x: x != '', map(lambda x: x.strip(), search_result.find_all('span')[0].get_text().split(', '))))
         search_matches = tuple([p.get_text() for p in search_result.div.find_all('p')])
         year = int(search_result.find_all('span')[1].get_text().split(" / ")[0])
         journal_name = search_result.find_all('span')[1].a.get_text()
@@ -75,15 +96,28 @@ def get_chrome(options: tp.Optional[ChromeOptions] = None) -> Chrome:
     
     return driver
 
-def scrape_leninka_articles_search_page(driver: Chrome, url: str) -> tp.List[LeninkaArticle]:
+def scrape_leninka_articles_search_page(driver: Chrome, url: str, retry_count: int = 3) -> tp.List[LeninkaArticle]:
     """
     Opens a chrome driver to open page with search-results
     and returns a list of articles results
     """
     driver.get(url)
-    element = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, SEARCH_RESULTS_ELEMENT_ID))
-    )
+    element = None
+    retry_counter = retry_count
+    retry_wait_times = [10, 30, 60, 120, 240] 
+    while not element and retry_counter != 0:
+        try:
+            element = WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.ID, SEARCH_RESULTS_ELEMENT_ID))
+            )
+            time.sleep(0.5)
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(0.5)
+        except:      
+            if retry_counter == 0:
+                raise
+            time.sleep(retry_wait_times[-max(retry_counter, len(retry_wait_times))])
+            retry_counter -= 1
     search_results_html = element.get_attribute('innerHTML')
     soup = BeautifulSoup(search_results_html, 'lxml')
     articles = [LeninkaArticle.from_li_web_element(li) for li in soup.find_all('li')]
@@ -94,7 +128,9 @@ def scrape_leninka_articles_search(
     driver: Chrome,
     query: str, 
     limit: int = ENTRIES_PER_LENINKA_PAGE, 
-    skip: int = 0
+    skip: int = 0,
+    wait: float = 0.5,
+    max_retry_count: int = 5
 ) -> tp.List[LeninkaArticle]:
     """
     Get all articles infos from search of leninka
@@ -111,26 +147,20 @@ def scrape_leninka_articles_search(
         return []
     
     search_page_base_url = CYBERLENINKA_BASE_URL + f'/search?q={urlencode(query)}'
-    starting_page = 1 + skip // ENTRIES_PER_LENINKA_PAGE
-    ending_page = 1 + (skip + limit) // ENTRIES_PER_LENINKA_PAGE
+    starting_page_idx = skip // ENTRIES_PER_LENINKA_PAGE
+    ending_page_idx = (skip + limit) // ENTRIES_PER_LENINKA_PAGE
 
     articles = []
 
-    for i in tqdm(range(starting_page, ending_page + 1), desc='Pages'):
-        search_page_url = search_page_base_url + f'&page={str(i)}'
-        page_articles = scrape_leninka_articles_search_page(driver, search_page_url) 
+    for i in tqdm(range(starting_page_idx, ending_page_idx + 1), desc='Pages'):
+        search_page_url = search_page_base_url + f'&page={str(i+1)}'
+        page_articles = scrape_leninka_articles_search_page(driver, search_page_url, retry_count=max_retry_count) 
+        time.sleep(random.uniform(0.9*wait, 1.2*wait))
         articles.extend(page_articles)
 
-    position_of_first_article_on_first_page = skip % ENTRIES_PER_LENINKA_PAGE
-    position_of_last_article_on_last_page = ((skip+limit) % ENTRIES_PER_LENINKA_PAGE)
+    first_article_first_page_idx = skip % ENTRIES_PER_LENINKA_PAGE
     articles = articles[
-        position_of_first_article_on_first_page:
-        -(ENTRIES_PER_LENINKA_PAGE - position_of_last_article_on_last_page)
+        first_article_first_page_idx:
+        first_article_first_page_idx + limit
     ]
     return articles
-
-
-def get_leninka_articles(query: str, limit: int = ENTRIES_PER_LENINKA_PAGE, skip: int = 0) -> tp.List:
-    # 1. Get download links
-    driver: Chrome = get_chrome()
-    links = scrape_leninka_articles_search(driver, query, limit, skip)
