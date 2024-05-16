@@ -15,3 +15,11 @@ To build dataset, run
 ```bash
 python -m src.historiography.dataset.make_dataset
 ```
+
+## Net Graph visualization
+
+To build and open net graph visualization, run
+
+```bash
+python -m src.historiography.analysis.authors
+```

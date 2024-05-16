@@ -1,3 +1,5 @@
+import typing as tp
+
 import pytest
 import pathlib
 import selenium
@@ -38,3 +40,14 @@ def sample_valid_dataset_config(tmp_path, sample_query) -> HistoriographyDataset
         output_file_path=ds_file,
         search_queries_file=sample_query_file
     )
+
+@pytest.fixture
+def sample_authors_list() -> tp.Tuple[tp.List[tp.Tuple[str]], tp.Tuple[str]]:
+    return [
+        ("A", "B", "C"),
+        ("A", "B"),
+        ("C", "D"),
+        ("D", "A"),
+        ("E",),
+        ("E", "D"),
+    ], ("A", "B", "C", "D", "E")
