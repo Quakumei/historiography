@@ -3,13 +3,6 @@ import typing as tp
 import pytest
 import itertools
 
-from .fixtures import (
-    driver, 
-    sample_search_page_url,
-    sample_query,
-    urlencode
-)
-
 from ..historiography.scrape.leninka import (
     scrape_leninka_articles_search_page,
     scrape_leninka_articles_search,

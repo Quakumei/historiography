@@ -1,6 +1,3 @@
-from .fixtures import (
-    sample_authors_list
-)
 from ..historiography.analysis.authors import (
     get_authors_total_publication_counts,
     get_authors_solo_publication_counts
