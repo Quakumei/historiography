@@ -9,6 +9,7 @@ from ..historiography.scrape.leninka import (
     LeninkaArticle,
     ENTRIES_PER_LENINKA_PAGE,
 )
+from ..historiography.scrape.leninka import urlencode
 
 def validate_leninka_article(article: LeninkaArticle):
     assert isinstance(article, LeninkaArticle)

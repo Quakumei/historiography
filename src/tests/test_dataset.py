@@ -1,7 +1,5 @@
 import pandas as pd
 
-import os
-
 from ..historiography.dataset.make_dataset import make_historiography_dataset
 from ..historiography.settings import HistoriographyDatasetConfig
 
