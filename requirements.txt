@@ -5,3 +5,5 @@ tqdm==4.66.2
 pandas
 pyvis
 pydantic==2
+pdfminer.six
+requests

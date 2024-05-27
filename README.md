@@ -23,3 +23,11 @@ To build and open net graph visualization, run
 ```bash
 python -m src.historiography.analysis.authors
 ```
+
+## Dates extraction
+
+To extract dates from dataset, run
+
+```bash 
+python -m src.historiography.analysis.dates
+```
