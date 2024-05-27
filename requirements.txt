@@ -4,4 +4,4 @@ lxml==5.2.2
 tqdm==4.66.2
 pandas
 pyvis
-pyadntic==2.*
+pydantic==2
