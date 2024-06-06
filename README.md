@@ -34,8 +34,4 @@ python -m src.historiography.analysis.dates
 
 ## LLM chatbot
 
-To chat with data, run
-
-```bash
-python -m streamlit run src/historiography/demo/demo.py
-```
+To chat with data, refer to chat_with_historiography.ipynb
