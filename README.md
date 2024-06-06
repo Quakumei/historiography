@@ -31,3 +31,11 @@ To extract dates from dataset, run
 ```bash 
 python -m src.historiography.analysis.dates
 ```
+
+## LLM chatbot
+
+To chat with data, run
+
+```bash
+python -m streamlit run src/historiography/demo/demo.py
+```

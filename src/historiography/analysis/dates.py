@@ -101,7 +101,7 @@ def extract_dates(text):
     return list(map(int, re.findall(regex, text)))
 
 if __name__ == '__main__':
-    HISTORIOGRAPHY_CSV = 'data/historiography.csv'
+    HISTORIOGRAPHY_CSV = 'data/historiography1_full.csv'
     full_texts_df = load_historiography_csv_with_texts(HISTORIOGRAPHY_CSV, head=False)
     full_texts_df['periods'] = full_texts_df['full_text'].parallel_apply(extract_dates).parallel_apply(dates_to_periods)
     print(full_texts_df[['title', 'periods']])
